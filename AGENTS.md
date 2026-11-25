@@ -21,7 +21,7 @@ Responsable de la API REST, la integridad de datos, la seguridad y las reglas de
 | Componente | Detalle |
 | :--- | :--- |
 | Runtime | Node.js + Express 4 (CommonJS, `require`) |
-| Base de datos | MySQL 8 vía `mysql2/promise` con pool (`connectionLimit: 10`, `dateStrings: true`) |
+| Base de datos | MySQL 8 vía `mysql2/promise` con pool (`connectionLimit`: 10 local / 2 en Vercel, `dateStrings: true`); acepta `DB_*`, `TIDB_*` o `DATABASE_URL` |
 | Auth | JWT (`jsonwebtoken`) 8 h + `bcrypt` para hashing |
 | Seguridad | `helmet` (CSP deshabilitado), `cors`, `express-rate-limit` |
 | Tareas programadas | `node-cron` (job diario 03:00) |
@@ -86,6 +86,7 @@ Todas las rutas cuelgan de `/api`. Las protegidas requieren `Authorization: Bear
 | POST | `/api/pagos/:id/pagar` | JWT | `metodo_pago` ∈ `efectivo`, `transferencia`, `tarjeta`, `mercadopago`, `otro`; reactiva al alumno si saldó |
 | GET | `/api/pagos/reporte` | JWT | últimos 12 meses |
 | POST | `/api/ia` | JWT (rate limit 10/min) | `{ pregunta }` ≤ 500 caracteres |
+| GET/POST | `/api/jobs/estados` | `Authorization: Bearer` o `x-cron-secret` | Vercel Cron (GET) o scheduler externo; 401 si `CRON_SECRET` no está configurado |
 
 ### Errores
 

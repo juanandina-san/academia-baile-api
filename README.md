@@ -2,7 +2,7 @@
 
 API REST en Node.js + Express para la gestión de la academia: alumnos, profesores, clases, inscripciones, cuotas y pagos, tablero de métricas y un asistente de IA de solo lectura.
 
-El frontend (SPA vanilla) vive en [`../academia-baile-web`](../academia-baile-web) y esta API lo sirve como estático, por lo que la aplicación completa se abre en `http://localhost:3000`.
+El frontend (SPA vanilla) vive en [`../academia-baile-web`](../academia-baile-web) y esta API lo sirve como estático en local, por lo que la aplicación completa se abre en `http://localhost:3000`. En producción el frontend se despliega en Vercel o Netlify y apunta a esta API por HTTPS. La API corre en Vercel con una base TiDB Cloud Starter (MySQL compatible, gratuita), instalable desde el Marketplace de Vercel: ver [guía de despliegue de la API](DEPLOY.md) y [del frontend](../academia-baile-web/DEPLOY.md).
 
 ## Stack
 
@@ -48,13 +48,18 @@ Abrir `http://localhost:3000`. El cron de cuotas y estados se ejecuta al iniciar
 | Variable | Descripción |
 | :--- | :--- |
 | `PORT` | Puerto del servidor (por defecto `3000`). |
-| `DB_HOST` | Host de MySQL. |
-| `DB_USER` | Usuario de MySQL. |
-| `DB_PASSWORD` | Contraseña de MySQL. |
-| `DB_NAME` | Nombre de la base (`academia_baile` en el esquema). |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexión MySQL para local u host propio. Tienen prioridad sobre `TIDB_*`. |
+| `TIDB_HOST`, `TIDB_PORT`, `TIDB_USER`, `TIDB_PASSWORD`, `TIDB_DATABASE` | Inyectadas por la integración TiDB Cloud del Marketplace de Vercel. |
+| `DATABASE_URL` | Alternativa en formato URL (`mysql://usuario:clave@host:puerto/base`); tercera opción. |
+| `DB_SSL` / `DB_SSL_CA` | TLS de MySQL. Se activa automáticamente al detectar TiDB; `DB_SSL` lo fuerza. |
+| `DB_POOL_LIMIT` | Conexiones por instancia: 2 por defecto en Vercel, 10 en local. |
 | `JWT_SECRET` | Texto largo usado para firmar los tokens. |
 | `ANTHROPIC_API_KEY` | Clave de la API de Anthropic para el asistente. |
 | `IA_MODEL` | Modelo de IA a utilizar. |
+| `CORS_ORIGIN` | Orígenes permitidos separados por comas. Vacío = todos (solo local). |
+| `CRON_SECRET` | Secreto para `GET` (Vercel Cron) y `POST /api/jobs/estados`. |
+
+> `src/config/db.js` resuelve la conexión en este orden: `DB_*` → `TIDB_*` → `DATABASE_URL`. Con la integración del Marketplace no hay que copiar las variables a `DB_*`.
 
 > `.env` contiene secretos y está excluido por `.gitignore`. Versionar únicamente `.env.example`.
 
@@ -97,6 +102,7 @@ Todas las rutas cuelgan de `/api`. Las protegidas requieren `Authorization: Bear
 | GET/POST/PUT/DELETE | `/api/clases` | Clases, horarios, cupos e inscripciones. |
 | GET/POST | `/api/pagos` | Cuotas, registro de pagos y reporte mensual. |
 | POST | `/api/ia` | Consulta al asistente de IA (solo lectura). |
+| GET/POST | `/api/jobs/estados` | Dispara cuotas/estados; GET con `Authorization: Bearer` (Vercel Cron) o POST con `x-cron-secret`. |
 
 El contrato detallado (parámetros, validaciones y códigos de estado) está en [`AGENTS.md`](AGENTS.md).
 
